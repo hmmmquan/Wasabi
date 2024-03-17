@@ -32,7 +32,7 @@ public class Wasabi {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        glOrtho(-320, 320, -240, 240, 1, -1); 
+        glOrtho(-320, 320, -240, 240, 1, -1); //center 
         glMatrixMode(GL_MODELVIEW);
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     }
