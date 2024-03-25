@@ -179,43 +179,43 @@ class FPCameraController {
         try {
             glBegin(GL_QUADS);
 
-            //Top face (red)
-            glColor3f(1.0f, 0.0f, 0.0f); //Red
+            //Top
+            glColor3f(1.0f, 0.0f, 0.0f); //red
             glVertex3f(1.0f, 1.0f, -1.0f);
             glVertex3f(-1.0f, 1.0f, -1.0f);
             glVertex3f(-1.0f, 1.0f, 1.0f);
             glVertex3f(1.0f, 1.0f, 1.0f);
 
-            // Bottom
-            glColor3f(0.0f, 1.0f, 0.0f); //Green
+            //Bottom
+            glColor3f(0.0f, 1.0f, 0.0f); //green
             glVertex3f(1.0f, -1.0f, 1.0f);
             glVertex3f(-1.0f, -1.0f, 1.0f);
             glVertex3f(-1.0f, -1.0f, -1.0f);
             glVertex3f(1.0f, -1.0f, -1.0f);
 
-            // Front
-            glColor3f(0.0f, 0.0f, 1.0f); //Blue
+            //Front
+            glColor3f(0.0f, 0.0f, 1.0f); //blue
             glVertex3f(1.0f, 1.0f, 1.0f);
             glVertex3f(-1.0f, 1.0f, 1.0f);
             glVertex3f(-1.0f, -1.0f, 1.0f);
             glVertex3f(1.0f, -1.0f, 1.0f);
 
-            // Back
-            glColor3f(1.0f, 1.0f, 0.0f); //Yellow
+            //Back
+            glColor3f(1.0f, 1.0f, 0.0f); //yellow
             glVertex3f(1.0f, -1.0f, -1.0f);
             glVertex3f(-1.0f, -1.0f, -1.0f);
             glVertex3f(-1.0f, 1.0f, -1.0f);
             glVertex3f(1.0f, 1.0f, -1.0f);
 
-            // Left
-            glColor3f(1.0f, 0.0f, 1.0f); //Magenta
+            //Left
+            glColor3f(1.0f, 0.0f, 1.0f); //magenta
             glVertex3f(-1.0f, 1.0f, 1.0f);
             glVertex3f(-1.0f, 1.0f, -1.0f);
             glVertex3f(-1.0f, -1.0f, -1.0f);
             glVertex3f(-1.0f, -1.0f, 1.0f);
 
             //Right
-            glColor3f(0.0f, 1.0f, 1.0f); //Cyan
+            glColor3f(0.0f, 1.0f, 1.0f); //cyan
             glVertex3f(1.0f, 1.0f, -1.0f);
             glVertex3f(1.0f, 1.0f, 1.0f);
             glVertex3f(1.0f, -1.0f, 1.0f);
