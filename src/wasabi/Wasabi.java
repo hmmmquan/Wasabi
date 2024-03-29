@@ -124,7 +124,7 @@ class FPCameraController {
         float mouseSensitivity = 0.09f;
         float movementSpeed= .35f;
         //hide the mouse
-        //Mouse.setGrabbed(true);
+        Mouse.setGrabbed(true);
         
         while (!Display.isCloseRequested() && !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)){
             time = Sys.getTime();
@@ -137,6 +137,12 @@ class FPCameraController {
             //distance in mouse movement 
             //from the last getDY() call.
             dy = Mouse.getDY();
+            
+            //controll camera yaw from x movement fromt the mouse
+            camera.yaw(dx * mouseSensitivity);
+            //controll camera pitch from y movement fromt the mouse
+            camera.pitch(dy * mouseSensitivity);
+
             
             //when passing in the distance to move
             //we times the movementSpeedwith dt this is a time scale
