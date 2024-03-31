@@ -8,7 +8,8 @@ package wasabi;
 * assignment: Semester Project
 * date last modified: 3/25/204
 *
-* purpose: to be written
+* purpose: this program displays a cube in a 3D space 
+* and lets the user navigate with their mouse and keyboard.
 *
 ****************************************************************/
 
@@ -163,7 +164,7 @@ class FPCameraController {
             if (Keyboard.isKeyDown(Keyboard.KEY_SPACE)) { //move up        
                 camera.moveUp(movementSpeed);
             }
-            if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
+            if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
                 camera.moveDown(movementSpeed);
             }
             
