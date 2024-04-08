@@ -43,6 +43,13 @@ class FPCameraController {
     private float pitch = 0.0f;       
     private Vector3Float me;
     
+    /*
+    Our Camera Controller class will need a variable to hold a new Chunk 
+    object place at an x,y,z location given through the arguments of our 
+    Chunk constructor.
+    */
+    private Chunk chunk;
+    
     public FPCameraController(float x, float y, float z) {
         //instantiate position Vector3f to the x y z params.
         position = new Vector3f(x, y, z);
@@ -50,6 +57,7 @@ class FPCameraController {
         lPosition.x = 0f;
         lPosition.y = 15f;
         lPosition.z = 0f;
+        chunk = new Chunk(-20,-100,-80); // test chunk at the origin
     }
     
     //increment the camera's current yaw rotation
@@ -174,7 +182,9 @@ class FPCameraController {
             camera.lookThrough();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             //you would draw your scene here.
-            render();
+            // old render(); method commented out in favor of the new one from the chunk object
+            chunk.render();
+            
             //draw the buffer to the screen 
             Display.update();
             Display.sync(60);
@@ -238,7 +248,7 @@ class FPCameraController {
 
 public class Wasabi {
     
-    private FPCameraController fp = new FPCameraController(0f,0f,0f);
+    private FPCameraController fp;
     private DisplayMode displayMode;
 
     public static void main(String[] args) {
@@ -250,6 +260,7 @@ public class Wasabi {
         try {
             createWindow();
             initGL();
+            fp = new FPCameraController(0f,0f,0f); // We now also need to initialize our instance of our Camera controller inside our start method instead of when we declare it
             fp.gameLoop();
         } catch (Exception e) {
             e.printStackTrace();
@@ -278,5 +289,8 @@ public class Wasabi {
         glMatrixMode(GL_MODELVIEW);
         glEnable(GL_DEPTH_TEST);
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
+        glEnable(GL_DEPTH_TEST);
     }
 }
