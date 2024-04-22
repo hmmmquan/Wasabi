@@ -22,7 +22,6 @@ import org.lwjgl.util.glu.GLU;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.Sys;
 
-
 class Vector3Float {
     public float x, y, z;
 
@@ -282,6 +281,8 @@ public class Wasabi {
     }
 
     private void initGL() {
+        glEnable(GL_TEXTURE_2D);
+        glEnableClientState (GL_TEXTURE_COORD_ARRAY);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
