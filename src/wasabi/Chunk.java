@@ -43,8 +43,7 @@ public class Chunk {
     
 
     public void rebuildMesh(float startX, float startY, float startZ) {
-        r= new Random();
-        SimplexNoise noise = new SimplexNoise(5,0.5,r.nextInt());
+
         VBOColorHandle = glGenBuffers();
         VBOVertexHandle = glGenBuffers();
         VBOTextureHandle = glGenBuffers();
@@ -58,20 +57,13 @@ public class Chunk {
         
         for (float x = 0; x < CHUNK_SIZE; x += 1) {
             for (float z = 0; z < CHUNK_SIZE; z += 1) {
-                
-                //int i=(int)(startX+x*((CHUNK_SIZE-startX)/CUBE_LENGTH));
-                int height = (int) (startY + (int)(100*noise.getNoise((int)x,(int)z)) * CUBE_LENGTH);
-                
-                if (height > CHUNK_SIZE){
-                    height = CHUNK_SIZE;
-                }
-                if (height <= 0){
-                    height = 1;
-                }
-                for(float y = 0; y < height; y++){
-                    
-                    //int height = (int) (startY + (int)(100*noise.getNoise((int)x,(int)z,(int)y)) * CUBE_LENGTH);
 
+                for(float y = 0; y < CHUNK_SIZE; y++){
+                    
+                    // Here we'll do some prettying up on the block type positioning.
+                    // we'll probably want to do this elsewhere when we get more complex terrain gen,
+                    // but for now, I need access to the height variable, and this is where it is.
+                     
                     
                     if (Blocks[(int) x][(int) y][(int) z].getType() == Block.BlockType.BlockType_Air){
                         continue;
@@ -100,6 +92,8 @@ public class Chunk {
         glBufferData(GL_ARRAY_BUFFER, VertexTextureData,GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
+    
+    
     
     private float[] createCubeVertexCol(float[] CubeColorArray) {
         float[] cubeColors = new float[CubeColorArray.length * 4 * 6];
@@ -170,6 +164,9 @@ public class Chunk {
     }
     
     public Chunk(int startX, int startY, int startZ) {
+        r= new Random();
+        SimplexNoise noise = new SimplexNoise(50,0.3,r.nextInt());
+        
         try{
             texture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("src/wasabi/terrain.png"));
         }
@@ -177,24 +174,49 @@ public class Chunk {
         {
             System.out.print("Error, couldn't load terrain.png!");
         }
-        r= new Random();
         Blocks = new 
         Block[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
         for (int x = 0; x < CHUNK_SIZE; x++) {
-            for (int y = 0; y < CHUNK_SIZE; y++) {
-                for (int z = 0; z < CHUNK_SIZE; z++) {
-                    if(r.nextFloat()>0.7f){
+            for (int z = 0; z < CHUNK_SIZE; z++) {
+                
+                //I'm going to get a hight IN BLOCKS using this getnoise function.
+                // because it gives a value between -1 and 1, and I just want
+                // positive values, I'm going to add +1 (0-2) then divide by 2 to get (0-1).
+                // then I'll multiply that 0-1 valye  by our chunk height, so that the max value is the max height of the chunk
+                // NOTE: we add the startZ and startX values to X and Z so the terrain height will be consistent across additional chunks.
+                int height = (int) (((noise.getNoise((int)x+(int)startX,(int)z+(int)startZ)+1)/2) * CHUNK_SIZE);
+
+                // ensure we don't go out of bounds of the chunk, above or below.
+                if (height > CHUNK_SIZE){
+                    height = CHUNK_SIZE;
+                }
+                if (height <= 0){
+                    height = 1;
+                }
+                
+                for (int y = 0; y < CHUNK_SIZE; y++) {
+                    if (y >= height){
+                        Blocks[x][y][z] = new 
+                        Block(Block.BlockType.BlockType_Air);
+                    }else if(y == height-1){
                         Blocks[x][y][z] = new 
                         Block(Block.BlockType.BlockType_Grass);
-                    }else if(r.nextFloat()>0.4f){
+                    }else if(y > height-4 && y > 1){
                         Blocks[x][y][z] = new 
                         Block(Block.BlockType.BlockType_Dirt);
-                    }else if(r.nextFloat()>0.2f){
+                    }else if(y < 1){
                         Blocks[x][y][z] = new 
-                        Block(Block.BlockType.BlockType_Stone);
+                        Block(Block.BlockType.BlockType_Bedrock);
                     }else{
-                        Blocks[x][y][z] = new 
-                        Block(Block.BlockType.BlockType_Bedrock); // WAS Block.BlockType.BlockType_Default, but I changed it because BlockType_Default doesn't exist.
+                        float rand = r.nextFloat();
+                        if (rand > 0.3){
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone); 
+                        }else if(rand > 0.1){
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand); 
+                        }else{
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Water); 
+                        }
+
                     }
                 }
             }
