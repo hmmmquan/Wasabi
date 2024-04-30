@@ -197,8 +197,14 @@ public class Chunk {
                         Blocks[x][y][z] = new 
                         Block(Block.BlockType.BlockType_Air);
                     }else if(y == height-1){
-                        Blocks[x][y][z] = new 
-                        Block(Block.BlockType.BlockType_Grass);
+                        float rand = r.nextFloat();
+                        if (rand > 0.3){
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass); 
+                        }else if(rand > 0.1){
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand); 
+                        }else{
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Water); 
+                        }
                     }else if(y > height-4 && y > 1){
                         Blocks[x][y][z] = new 
                         Block(Block.BlockType.BlockType_Dirt);
@@ -206,15 +212,7 @@ public class Chunk {
                         Blocks[x][y][z] = new 
                         Block(Block.BlockType.BlockType_Bedrock);
                     }else{
-                        float rand = r.nextFloat();
-                        if (rand > 0.3){
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone); 
-                        }else if(rand > 0.1){
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand); 
-                        }else{
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Water); 
-                        }
-
+                        Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone);
                     }
                 }
             }
