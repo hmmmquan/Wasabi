@@ -478,7 +478,7 @@ public class Chunk {
     }
     
     public void createRivers(int startX, int startZ, int maxY) {
-        int body_size = 20; //Length of river
+        int body_size = 30; //Length of river
         for (int x = startX - body_size; x <= startX + body_size; x++) {
             for (int z = startZ - body_size; z <= startZ + body_size; z++) {
                 if ((x - startX) * (x - startX) + (z - startZ) * (z - startZ) <= body_size * body_size) {
