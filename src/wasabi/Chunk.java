@@ -200,10 +200,8 @@ public class Chunk {
                         float rand = r.nextFloat();
                         if (rand > 0.3){
                             Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass); 
-                        }else if(rand > 0.1){
+                        }else {
                             Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand); 
-                        }else{
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Water); 
                         }
                     }else if(y > height-4 && y > 1){
                         Blocks[x][y][z] = new 
@@ -218,7 +216,7 @@ public class Chunk {
             }
         }
         
-        int numOfRivers = 3; 
+        int numOfRivers = 4; 
         for (int i = 0; i < numOfRivers; i++) {
             int waterX = r.nextInt(CHUNK_SIZE - 4) + 2; //Avoid edges
             int waterZ = r.nextInt(CHUNK_SIZE - 4) + 2; //Avoid edges
