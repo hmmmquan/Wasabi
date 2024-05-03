@@ -217,6 +217,16 @@ public class Chunk {
                 }
             }
         }
+        
+        int numOfRivers = 3; 
+        for (int i = 0; i < numOfRivers; i++) {
+            int waterX = r.nextInt(CHUNK_SIZE - 4) + 2; //Avoid edges
+            int waterZ = r.nextInt(CHUNK_SIZE - 4) + 2; //Avoid edges
+            int waterY = (int) (((noise.getNoise(waterX + startX, waterZ + startZ) + 1) / 2) * CHUNK_SIZE);
+            waterY = Math.min(waterY, CHUNK_SIZE - 1); //Ensure within bounds
+            createRivers(waterX, waterZ, waterY);
+        }
+        
         VBOColorHandle = glGenBuffers();
         VBOVertexHandle = glGenBuffers();
         VBOTextureHandle = glGenBuffers();
@@ -459,4 +469,29 @@ public class Chunk {
                 x + offset*4, y + offset*1, 
                 x + offset*3, y + offset*1};
     }
+    
+    public boolean isBlockSurroundedBySolid(int x, int z, int y) {
+        boolean surrounded = true;
+        if (x > 0 && Blocks[x - 1][y][z].getType() == Block.BlockType.BlockType_Air) surrounded = false;
+        if (x < CHUNK_SIZE - 1 && Blocks[x + 1][y][z].getType() == Block.BlockType.BlockType_Air) surrounded = false;
+        if (z > 0 && Blocks[x][y][z - 1].getType() == Block.BlockType.BlockType_Air) surrounded = false;
+        if (z < CHUNK_SIZE - 1 && Blocks[x][y][z + 1].getType() == Block.BlockType.BlockType_Air) surrounded = false;
+        return surrounded;
+    }
+    
+    public void createRivers(int startX, int startZ, int maxY) {
+        int body_size = 20; //Length of river
+        for (int x = startX - body_size; x <= startX + body_size; x++) {
+            for (int z = startZ - body_size; z <= startZ + body_size; z++) {
+                if ((x - startX) * (x - startX) + (z - startZ) * (z - startZ) <= body_size * body_size) {
+                    if (x >= 0 && x < CHUNK_SIZE && z >= 0 && z < CHUNK_SIZE) {
+                        if (isBlockSurroundedBySolid(x, z, maxY)) { //Check adjacent blocks are not air (except above)
+                            Blocks[x][maxY][z] = new Block(Block.BlockType.BlockType_Water);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }

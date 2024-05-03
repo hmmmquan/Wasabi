@@ -42,7 +42,6 @@ class FPCameraController {
     private float yaw = 0.0f;
     //the rotation around the X axis of the camera
     private float pitch = 0.0f;       
-    private Vector3Float me;
     
     /*
     Our Camera Controller class will need a variable to hold a new Chunk 
@@ -137,7 +136,7 @@ class FPCameraController {
         float lastTime = 0.0f; // when the last frame was
         long time = 0;
         float mouseSensitivity = 0.09f;
-        float movementSpeed= .35f;
+        float movementSpeed= .80f;
         //hide the mouse
         Mouse.setGrabbed(true);
         
