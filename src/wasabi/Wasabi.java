@@ -22,6 +22,7 @@ import org.lwjgl.util.glu.GLU;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.Sys;
 import java.nio.FloatBuffer;
+import java.util.Random;
 import org.lwjgl.BufferUtils;
 
 class Vector3Float {
@@ -48,7 +49,7 @@ class FPCameraController {
     object place at an x,y,z location given through the arguments of our 
     Chunk constructor.
     */
-    private Chunk chunk;
+    private Chunk[] chunks;
     
     public FPCameraController(float x, float y, float z) {
         //instantiate position Vector3f to the x y z params.
@@ -57,7 +58,25 @@ class FPCameraController {
         lPosition.x = 0f;
         lPosition.y = 15f;
         lPosition.z = 0f;
-        chunk = new Chunk(-20,-100,-80); // test chunk at the origin
+        //chunk = new Chunk(-20,-100,-80); // test chunk at the origin
+        Random r = new Random();
+        int seed = r.nextInt();
+        int caveSeed = r.nextInt();
+        placeChunks(-20, -100, -80, 5, seed, caveSeed); // these values can be edited no problem. I picked them so that it was easy to see the chunk from the camera start position.
+    }
+    
+    // in this function I'll lay out a square grid of chunks which is mapsize x mapsize
+    private void placeChunks(int startX, int startY, int startZ, int mapsize, int seed, int caveSeed){
+        chunks = new Chunk[mapsize*mapsize];
+        for (int i = 0; i < mapsize; i++){
+            for (int j = 0; j < mapsize; j++){
+                int chunkWidth = Chunk.CHUNK_SIZE*Chunk.CUBE_LENGTH;
+                int x = startX + i*chunkWidth;
+                int z = startZ + j*chunkWidth;
+                int y = startY; //for now we only have one chunk layer
+                chunks[i*mapsize+j] = new Chunk(x, y, z, seed, caveSeed);
+            }
+        }
     }
     
     //increment the camera's current yaw rotation
@@ -123,8 +142,7 @@ class FPCameraController {
         glTranslatef(position.x, position.y, position.z);
         
         FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
-        lightPosition.put(lPosition.x).put(
-        lPosition.y).put(lPosition.z).put(1.0f).flip();
+        lightPosition.put(lPosition.x).put(lPosition.y).put(lPosition.z).put(1.0f).flip();
         glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
     
@@ -188,8 +206,10 @@ class FPCameraController {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             //you would draw your scene here.
             // old render(); method commented out in favor of the new one from the chunk object
-            chunk.render();
-            
+            //chunk.render();
+            for (int i = 0; i < chunks.length; i++){
+                chunks[i].render();
+            }
             //draw the buffer to the screen 
             Display.update();
             Display.sync(60);
