@@ -21,6 +21,9 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.util.glu.GLU;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.Sys;
+import java.nio.FloatBuffer;
+import java.util.Random;
+import org.lwjgl.BufferUtils;
 
 class Vector3Float {
     public float x, y, z;
@@ -41,13 +44,15 @@ class FPCameraController {
     //the rotation around the X axis of the camera
     private float pitch = 0.0f;       
     private Vector3Float me;
-    
+    private boolean moveLightWithCamera = true;
+
     /*
     Our Camera Controller class will need a variable to hold a new Chunk 
     object place at an x,y,z location given through the arguments of our 
     Chunk constructor.
     */
-    private Chunk chunk;
+    //private Chunk chunk;
+    private Chunk[] chunks;
     
     public FPCameraController(float x, float y, float z) {
         //instantiate position Vector3f to the x y z params.
@@ -56,7 +61,25 @@ class FPCameraController {
         lPosition.x = 0f;
         lPosition.y = 15f;
         lPosition.z = 0f;
-        chunk = new Chunk(-20,-100,-80); // test chunk at the origin
+        //chunk = new Chunk(-20,-100,-80); // test chunk at the origin
+        Random r = new Random();
+        int seed = r.nextInt();
+        int caveSeed = r.nextInt();
+        placeChunks(-20, -100, -80, 5, seed, caveSeed); // these values can be edited no problem. I picked them so that it was easy to see the chunk from the camera start position.
+    }
+    
+    // in this function I'll lay out a square grid of chunks which is mapsize x mapsize
+    private void placeChunks(int startX, int startY, int startZ, int mapsize, int seed, int caveSeed){
+        chunks = new Chunk[mapsize*mapsize];
+        for (int i = 0; i < mapsize; i++){
+            for (int j = 0; j < mapsize; j++){
+                int chunkWidth = Chunk.CHUNK_SIZE*Chunk.CUBE_LENGTH;
+                int x = startX + i*chunkWidth;
+                int z = startZ + j*chunkWidth;
+                int y = startY; //for now we only have one chunk layer
+                chunks[i*mapsize+j] = new Chunk(x, y, z, seed, caveSeed);
+            }
+        }
     }
     
     //increment the camera's current yaw rotation
@@ -75,30 +98,51 @@ class FPCameraController {
     public void walkForward(float distance) {
         float xOffset = distance * (float)Math.sin(Math.toRadians(yaw));
         float zOffset = distance * (float)Math.cos(Math.toRadians(yaw));
-        position.x-= xOffset;
+        position.x -= xOffset;
         position.z += zOffset;
+        if (moveLightWithCamera){
+            FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
+            lightPosition.put(lPosition.x-=xOffset).put(lPosition.y).put(lPosition.z+=zOffset).put(1.0f).flip();
+            glLight(GL_LIGHT0, GL_POSITION, lightPosition);
+        }
+
     }
     
     public void walkBackwards(float distance) {
         float xOffset = distance * (float)Math.sin(Math.toRadians(yaw));
         float zOffset = distance * (float)Math.cos(Math.toRadians(yaw));
         position.x += xOffset;
-        position.z-= zOffset;
+        position.z -= zOffset;
+        if (moveLightWithCamera){
+            FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
+            lightPosition.put(lPosition.x-=xOffset).put(lPosition.y).put(lPosition.z+=zOffset).put(1.0f).flip();
+            glLight(GL_LIGHT0, GL_POSITION, lightPosition);
+        }
     }
     
     public void strafeLeft(float distance) {
         float xOffset = distance * (float)Math.sin(Math.toRadians(yaw-90));
         float zOffset = distance * (float)Math.cos(Math.toRadians(yaw-90));
-        position.x-= xOffset;
+        position.x -= xOffset;
         position.z += zOffset;
+        if (moveLightWithCamera){
+            FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
+            lightPosition.put(lPosition.x-=xOffset).put(lPosition.y).put(lPosition.z+=zOffset).put(1.0f).flip();
+            glLight(GL_LIGHT0, GL_POSITION, lightPosition);
+        }
     }
 
     //strafes the camera right relative to its current rotation (yaw)
     public void strafeRight(float distance) {
         float xOffset = distance * (float)Math.sin(Math.toRadians(yaw+90));
         float zOffset = distance * (float)Math.cos(Math.toRadians(yaw+90));
-        position.x-= xOffset;
+        position.x -= xOffset;
         position.z += zOffset;
+        if (moveLightWithCamera){
+            FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
+            lightPosition.put(lPosition.x-=xOffset).put(lPosition.y).put(lPosition.z+=zOffset).put(1.0f).flip();
+            glLight(GL_LIGHT0, GL_POSITION, lightPosition);
+        }
     }
     
      //moves the camera up relative to its current rotation (yaw)
@@ -120,6 +164,10 @@ class FPCameraController {
         glRotatef(yaw, 0.0f, 1.0f, 0.0f);
         //translate to the position vector's location
         glTranslatef(position.x, position.y, position.z);
+        
+        FloatBuffer lightPosition = BufferUtils.createFloatBuffer(4);
+        lightPosition.put(lPosition.x).put(lPosition.y).put(lPosition.z).put(1.0f).flip();
+        glLight(GL_LIGHT0, GL_POSITION, lightPosition);
     }
     
     public void gameLoop() {
@@ -182,7 +230,10 @@ class FPCameraController {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             //you would draw your scene here.
             // old render(); method commented out in favor of the new one from the chunk object
-            chunk.render();
+            //chunk.render();
+            for (int i = 0; i < chunks.length; i++){
+                chunks[i].render();
+            }
             
             //draw the buffer to the screen 
             Display.update();
@@ -249,7 +300,9 @@ public class Wasabi {
     
     private FPCameraController fp;
     private DisplayMode displayMode;
-
+    private FloatBuffer lightPosition;
+    private FloatBuffer whiteLight;
+    
     public static void main(String[] args) {
         Wasabi basic = new Wasabi();
         basic.start();
@@ -281,6 +334,15 @@ public class Wasabi {
     }
 
     private void initGL() {
+        
+        initLightArrays();
+        glLight(GL_LIGHT0, GL_POSITION, lightPosition); //sets our light’s position
+        glLight(GL_LIGHT0, GL_SPECULAR, whiteLight);//sets our specular light
+        glLight(GL_LIGHT0, GL_DIFFUSE, whiteLight);//sets our diffuse light
+        glLight(GL_LIGHT0, GL_AMBIENT, whiteLight);//sets our ambient light
+        //glEnable(GL_LIGHTING);//enables our lighting
+        glEnable(GL_LIGHT0);//enables light0
+        
         glEnable(GL_TEXTURE_2D);
         glEnableClientState (GL_TEXTURE_COORD_ARRAY);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -293,5 +355,12 @@ public class Wasabi {
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
         glEnable(GL_DEPTH_TEST);
+    }
+    
+    private void initLightArrays() {
+        lightPosition = BufferUtils.createFloatBuffer(4);
+        lightPosition.put(0.0f).put(0.0f).put(0.0f).put(1.0f).flip();
+        whiteLight = BufferUtils.createFloatBuffer(4);
+        whiteLight.put(1.0f).put(1.0f).put(1.0f).put(0.0f).flip();
     }
 }

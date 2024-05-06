@@ -27,6 +27,7 @@ public class Chunk {
     private Random r; 
     private int VBOTextureHandle;
     private Texture texture;
+    private int seed;
     
     public void render(){
         glPushMatrix();
@@ -158,9 +159,12 @@ public class Chunk {
         */
     }
     
-    public Chunk(int startX, int startY, int startZ) {
+    public Chunk(int startX, int startY, int startZ, int givenSeed, int caveSeed) {
         r= new Random();
-        SimplexNoise noise = new SimplexNoise(50,0.3,r.nextInt());
+        seed = givenSeed;
+        SimplexNoise noise = new SimplexNoise(50,0.3,seed);
+        SimplexNoise caveNoise = new SimplexNoise(50,0.3,caveSeed);
+        double caveNoiseThreshold = 0.57f;
         
         try{
             texture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("src/wasabi/terrain2.png"));
@@ -182,8 +186,13 @@ public class Chunk {
                 // positive values, I'm going to add +1 (0-2) then divide by 2 to get (0-1).
                 // then I'll multiply that 0-1 valye  by our chunk height, so that the max value is the max height of the chunk
                 // NOTE: we add the startZ and startX values to X and Z so the terrain height will be consistent across additional chunks.
-                int height = (int) (((noise.getNoise((int)x+(int)startX,(int)z+(int)startZ)+1)/2) * CHUNK_SIZE);
-
+                int chunkStartX = startX / CUBE_LENGTH;
+                int chunkStartz = startZ / CUBE_LENGTH;
+                int height = (int) (((noise.getNoise((int)x+(int)chunkStartX,(int)z+(int)chunkStartz)+1)/2) * CHUNK_SIZE);
+                
+                
+                
+                
                 // ensure we don't go out of bounds of the chunk, above or below.
                 if (height > CHUNK_SIZE){
                     height = CHUNK_SIZE;
@@ -193,7 +202,11 @@ public class Chunk {
                 }
                 
                 for (int y = 0; y < CHUNK_SIZE; y++) {
-                    if (y >= height){
+
+                    int chunkStartY = startY / CUBE_LENGTH;
+                    double caveValue = (caveNoise.getNoise(x+chunkStartX, y*2+chunkStartY, z+chunkStartz)+1)/2;
+                    //System.out.println("CaveValue = " + caveValue);
+                    if (y >= height || (caveValue >= caveNoiseThreshold && y >= 1)){
                         Blocks[x][y][z] = new 
                         Block(Block.BlockType.BlockType_Air);
                     }else if(y == height-1){
@@ -210,9 +223,9 @@ public class Chunk {
                         if (rand > 0.3){
                             Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone); 
                         }else if(rand > 0.1){
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand); 
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone); //BlockType_Sand); 
                         }else{
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Water); 
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone); //BlockType_Water); 
                         }
 
                     }
