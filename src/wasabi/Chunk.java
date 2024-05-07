@@ -208,7 +208,7 @@ public class Chunk {
                         Block(Block.BlockType.BlockType_Air);
                     }else if(y == height-1){
                         float rand = r.nextFloat();
-                        if (rand > 0.3){
+                        if (rand > 0.05){
                             Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass); 
                         }else {
                             Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand); 

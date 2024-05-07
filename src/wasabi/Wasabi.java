@@ -156,7 +156,7 @@ class FPCameraController {
         float lastTime = 0.0f; // when the last frame was
         long time = 0;
         float mouseSensitivity = 0.09f;
-        float movementSpeed= .80f;
+        float movementSpeed= .50f;
         //hide the mouse
         Mouse.setGrabbed(true);
         
