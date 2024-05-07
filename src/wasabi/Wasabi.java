@@ -23,6 +23,7 @@ import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.Sys;
 import java.nio.FloatBuffer;
 import java.util.Random;
+import java.time.LocalDateTime;
 import org.lwjgl.BufferUtils;
 
 class Vector3Float {
@@ -46,6 +47,10 @@ class FPCameraController {
     public boolean lightingOn = true;
     public boolean lightKeyHeld = false;
     
+    
+    private float r = 0.5f;
+    private float g = 0.75f;
+    private float b = 1.0f;
     /*
     Our Camera Controller class will need a variable to hold a new Chunk 
     object place at an x,y,z location given through the arguments of our 
@@ -157,10 +162,15 @@ class FPCameraController {
         long time = 0;
         float mouseSensitivity = 0.09f;
         float movementSpeed= .50f;
+        boolean dayTime = true;
+        LocalDateTime currentTime = LocalDateTime.now();
         //hide the mouse
         Mouse.setGrabbed(true);
         
         while (!Display.isCloseRequested() && !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)){
+            // Set background color for the scene
+            glClearColor(r, g, b, 1.0f);
+            
             time = Sys.getTime();
             lastTime = time;
             
@@ -229,6 +239,24 @@ class FPCameraController {
             //draw the buffer to the screen 
             Display.update();
             Display.sync(60);
+            
+            // Change background color over time
+            if(dayTime && LocalDateTime.now().getMinute() - currentTime.getMinute() != 0) {
+                if(r < 0.5f) r -= 0.1f;
+                if(g < 0.75f) g -= 0.1f;
+                if(b < 1.0f) b -= 0.1f;
+                currentTime = LocalDateTime.now();
+            } else if(!dayTime && LocalDateTime.now().getMinute() - currentTime.getMinute() != 0) {
+                if(r > 0.0f) r += 0.1f;
+                if(g > 0.0f) g += 0.1f;
+                if(b > 0.0f) b += 0.1f;
+                currentTime = LocalDateTime.now();
+            }
+
+            if(r <= 0.01f && g <= 0.01f && b <= 0.01f)
+                dayTime = true;
+            else if(r >= 0.49f && g >= 0.749f && b >= 0.999f)
+                dayTime = false;
         }
         Display.destroy();
     }
