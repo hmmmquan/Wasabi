@@ -11,6 +11,10 @@ package wasabi;
 * purpose: this program displays a cube in a 3D space 
 * and lets the user navigate with their mouse and keyboard.
 *
+* CONTROLS:
+* Hit L to toggle ambient light.
+* 
+* 
 ****************************************************************/
 
 import org.lwjgl.util.vector.Vector3f;
@@ -69,19 +73,21 @@ class FPCameraController {
         Random r = new Random();
         int seed = r.nextInt();
         int caveSeed = r.nextInt();
-        placeChunks(-20, -100, -80, 5, seed, caveSeed); // these values can be edited no problem. I picked them so that it was easy to see the chunk from the camera start position.
+        placeChunks(-120, -150, -180, 5, 2, seed, caveSeed); // these values can be edited no problem. I picked them so that it was easy to see the chunk from the camera start position.
     }
     
-    // in this function I'll lay out a square grid of chunks which is mapsize x mapsize
-    private void placeChunks(int startX, int startY, int startZ, int mapsize, int seed, int caveSeed){
-        chunks = new Chunk[mapsize*mapsize];
-        for (int i = 0; i < mapsize; i++){
-            for (int j = 0; j < mapsize; j++){
-                int chunkWidth = Chunk.CHUNK_SIZE*Chunk.CUBE_LENGTH;
-                int x = startX + i*chunkWidth;
-                int z = startZ + j*chunkWidth;
-                int y = startY; //for now we only have one chunk layer
-                chunks[i*mapsize+j] = new Chunk(x, y, z, seed, caveSeed);
+    // in this function I'll lay out a grid of chunks which is mapsize x mapsize x mapheight
+    private void placeChunks(int startX, int startY, int startZ, int mapsize, int mapHeight, int seed, int caveSeed){
+        chunks = new Chunk[mapsize*mapsize*mapHeight];
+        for (int k = 0; k < mapHeight; k++) {
+            for (int i = 0; i < mapsize; i++){
+                for (int j = 0; j < mapsize; j++){
+                    int chunkPixelSize = Chunk.CHUNK_SIZE*Chunk.CUBE_LENGTH;
+                    int x = startX + i*chunkPixelSize;
+                    int z = startZ + j*chunkPixelSize;
+                    int y = startY + (k*chunkPixelSize);
+                    chunks[i*mapsize+j + k*mapsize*mapsize] = new Chunk(x, y, z, seed, caveSeed, mapHeight, k);
+                }
             }
         }
     }
@@ -161,7 +167,7 @@ class FPCameraController {
         float lastTime = 0.0f; // when the last frame was
         long time = 0;
         float mouseSensitivity = 0.09f;
-        float movementSpeed= .50f;
+        float movementSpeed= .80f;
         boolean dayTime = true;
         LocalDateTime currentTime = LocalDateTime.now();
         //hide the mouse
@@ -342,7 +348,7 @@ public class Wasabi {
         Display.setFullscreen(false);
         DisplayMode[] d = Display.getAvailableDisplayModes();
         for(int i = 0; i < d.length; i++) {
-            if (d[i].getWidth() == 640 && d[i].getHeight() == 480 && d[i].getBitsPerPixel() == 32) {
+            if (d[i].getWidth() == 1920 && d[i].getHeight() == 1080 && d[i].getBitsPerPixel() == 32) {
                 displayMode = d[i];
                 break;
             }

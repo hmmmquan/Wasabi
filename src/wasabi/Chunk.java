@@ -67,8 +67,7 @@ public class Chunk {
                     VertexPositionData.put(createCube((float) (startX + x * CUBE_LENGTH), 
                     (float)(startY + y*CUBE_LENGTH+(int)(CHUNK_SIZE*.8)),
                     (float) (startZ + z * CUBE_LENGTH)));
-                    VertexColorData.put(createCubeVertexCol(
-                            getCubeColor(Blocks[(int) x][(int) y][(int) z])));
+                    VertexColorData.put(createCubeVertexCol(getCubeColor(Blocks[(int) x][(int) y][(int) z])));
                     VertexTextureData.put(createTexCube(
                             (float) 0, (float) 0,Blocks[(int)(x)][(int) (y)][(int) (z)]));
                 }
@@ -92,7 +91,7 @@ public class Chunk {
     
     
     private float[] createCubeVertexCol(float[] CubeColorArray) {
-        float[] cubeColors = new float[CubeColorArray.length * 4 * 6];
+        float[] cubeColors = new float[3 * 4 * 6];
         for (int i = 0; i < cubeColors.length; i++) {
             cubeColors[i] = CubeColorArray[i % CubeColorArray.length];
         }
@@ -137,7 +136,15 @@ public class Chunk {
     
     private float[] getCubeColor(Block block) {
         
-        return new float[] { 1, 1, 1 };
+        return new float[] { 
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+            0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f,
+            0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f,
+            0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f,
+            0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f,
+            0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f
+            
+        };
         /*
         switch (block.GetID()) {
             case 0: // air
@@ -159,12 +166,14 @@ public class Chunk {
         */
     }
     
-    public Chunk(int startX, int startY, int startZ, int givenSeed, int caveSeed) {
+    public Chunk(int startX, int startY, int startZ, int givenSeed, int caveSeed, int mapHeight, int layer) {
         r= new Random();
         seed = givenSeed;
         SimplexNoise noise = new SimplexNoise(50,0.3,seed);
         SimplexNoise caveNoise = new SimplexNoise(50,0.3,caveSeed);
-        double caveNoiseThreshold = 0.57f;
+        double averageCaveNoiseThreshold = 0.57f;
+        double minCaveNoiseThreashold  = 0.67f;
+        double maxCaveNoiseThreshold  = 0.47f;
         
         try{
             texture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("src/wasabi/terrain2.png"));
@@ -191,50 +200,71 @@ public class Chunk {
                 int height = (int) (((noise.getNoise((int)x+(int)chunkStartX,(int)z+(int)chunkStartz)+1)/2) * CHUNK_SIZE);
 
                 // ensure we don't go out of bounds of the chunk, above or below.
-                if (height > CHUNK_SIZE){
-                    height = CHUNK_SIZE;
+                if (height > CHUNK_SIZE * mapHeight){
+                    height = CHUNK_SIZE * mapHeight;
                 }
-                if (height <= 0){
-                    height = 1;
+                //if (height <= 0){
+                //    height = 1;
+                //}
+                boolean underground = false;
+                if (layer + 1 < mapHeight){
+                    underground = true;
                 }
                 
                 for (int y = 0; y < CHUNK_SIZE; y++) {
                     
                     int chunkStartY = startY / CUBE_LENGTH;
-                    double caveValue = (caveNoise.getNoise(x+chunkStartX, y*2+chunkStartY, z+chunkStartz)+1)/2;
+                    double caveValue = (caveNoise.getNoise(x+chunkStartX, (y+chunkStartY)*2, z+chunkStartz)+1)/2;
                     //System.out.println("CaveValue = " + caveValue);
-                    if (y >= height || (caveValue >= caveNoiseThreshold && y >= 1)){
-                        Blocks[x][y][z] = new 
-                        Block(Block.BlockType.BlockType_Air);
-                    }else if(y == height-1){
-                        float rand = r.nextFloat();
-                        if (rand > 0.05){
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass); 
-                        }else {
-                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand); 
+                    float fractionToTopOfWorld = ((float)layer*CHUNK_SIZE + y) / ((float)mapHeight*CHUNK_SIZE);
+                    double currentThreshold = maxCaveNoiseThreshold + ((minCaveNoiseThreashold - maxCaveNoiseThreshold) * fractionToTopOfWorld);
+                    if (underground){
+                        if (caveValue >= currentThreshold && y >= 1){
+                            Blocks[x][y][z] = new 
+                            Block(Block.BlockType.BlockType_Air);
+                        }else if(y < 1 && layer == 0){
+                            Blocks[x][y][z] = new 
+                            Block(Block.BlockType.BlockType_Bedrock);
+                        }else{
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone);
                         }
-                    }else if(y > height-4 && y > 1){
-                        Blocks[x][y][z] = new 
-                        Block(Block.BlockType.BlockType_Dirt);
-                    }else if(y < 1){
-                        Blocks[x][y][z] = new 
-                        Block(Block.BlockType.BlockType_Bedrock);
-                    }else{
-                        Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone);
+                        
+                    } else {
+                    
+                        if (y >= height || (caveValue >= currentThreshold)){
+                            Blocks[x][y][z] = new 
+                            Block(Block.BlockType.BlockType_Air);
+                        }else if(y == height-1){
+                            float rand = r.nextFloat();
+                            if (rand > 0.05){
+                                Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Grass); 
+                            }else {
+                                Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Sand); 
+                            }
+                        }else if(y > height-4 && y > 1){
+                            Blocks[x][y][z] = new 
+                            Block(Block.BlockType.BlockType_Dirt);
+                        }else if(y < 1 && layer == 0){
+                            Blocks[x][y][z] = new 
+                            Block(Block.BlockType.BlockType_Bedrock);
+                        }else{
+                            Blocks[x][y][z] = new Block(Block.BlockType.BlockType_Stone);
+                        }
                     }
                 }
             }
         }
         
-        int numOfRivers = 1; 
-        for (int i = 0; i < numOfRivers; i++) {
-            int waterX = r.nextInt(CHUNK_SIZE - 4) + 2; //Avoid edges
-            int waterZ = r.nextInt(CHUNK_SIZE - 4) + 2; //Avoid edges
-            int waterY = (int) (((noise.getNoise(waterX + startX, waterZ + startZ) + 1) / 2) * CHUNK_SIZE);
-            waterY = Math.min(waterY, CHUNK_SIZE - 1); //Ensure within bounds
-            createRivers(waterX, waterZ, waterY);
+        if (layer+1 == mapHeight){
+            int numOfRivers = 1; 
+            for (int i = 0; i < numOfRivers; i++) {
+                int waterX = r.nextInt(CHUNK_SIZE - 4) + 2; //Avoid edges
+                int waterZ = r.nextInt(CHUNK_SIZE - 4) + 2; //Avoid edges
+                int waterY = (int) (((noise.getNoise(waterX + startX, waterZ + startZ) + 1) / 2) * CHUNK_SIZE);
+                waterY = Math.min(waterY, CHUNK_SIZE - 1); //Ensure within bounds
+                createRivers(waterX, waterZ, waterY);
+            }
         }
-        
         VBOColorHandle = glGenBuffers();
         VBOVertexHandle = glGenBuffers();
         VBOTextureHandle = glGenBuffers();
