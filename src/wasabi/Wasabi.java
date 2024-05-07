@@ -43,6 +43,8 @@ class FPCameraController {
     private float yaw = 0.0f;
     //the rotation around the X axis of the camera
     private float pitch = 0.0f;       
+    public boolean lightingOn = true;
+    public boolean lightKeyHeld = false;
     
     /*
     Our Camera Controller class will need a variable to hold a new Chunk 
@@ -179,7 +181,21 @@ class FPCameraController {
             //when passing in the distance to move
             //we times the movementSpeedwith dt this is a time scale
             //so if its a slow frame u move more then a fast frame
-            //so on a slow computer you move just as fast as on a fast computer
+            //so on a slow computer you move just as fast as on a fast computer            
+            if (Keyboard.isKeyDown(Keyboard.KEY_L)) {
+                if (!lightKeyHeld){
+                    if (lightingOn){
+                        glDisable(GL_LIGHTING);
+                    } else {
+                        glEnable(GL_LIGHTING);
+                    }
+                    lightingOn = !lightingOn;
+                }
+                lightKeyHeld = true;
+            } else {
+                lightKeyHeld = false;
+            }
+            
             if (Keyboard.isKeyDown(Keyboard.KEY_W)) { //move forward
                 camera.walkForward(movementSpeed);
             }
