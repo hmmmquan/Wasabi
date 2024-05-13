@@ -64,12 +64,26 @@ public class Chunk {
                     if (Blocks[(int) x][(int) y][(int) z].getType() == Block.BlockType.BlockType_Air){
                         continue;
                     }
+                    byte bitmask = 1;
+                    byte faceFlags = 0;
+                    int numFaces = 0; // the actual number of faces we'll render
+                    for (int i=0; i<6; i++){
+                        if (!sharedFace(i, (int)x, (int)y, (int)z)){
+                            faceFlags |= bitmask;
+                            numFaces++;
+                        }
+                        bitmask <<= 1;
+                    }
+                    if (numFaces == 0){
+                        continue; // no need to add data for a block that doesn't see the light of day.
+                    }
+                    
                     VertexPositionData.put(createCube((float) (startX + x * CUBE_LENGTH), 
                     (float)(startY + y*CUBE_LENGTH+(int)(CHUNK_SIZE*.8)),
-                    (float) (startZ + z * CUBE_LENGTH)));
-                    VertexColorData.put(createCubeVertexCol(getCubeColor(Blocks[(int) x][(int) y][(int) z])));
-                    VertexTextureData.put(createTexCube(
-                            (float) 0, (float) 0,Blocks[(int)(x)][(int) (y)][(int) (z)]));
+                    (float) (startZ + z * CUBE_LENGTH),
+                    faceFlags, numFaces));
+                    VertexColorData.put(createCubeVertexCol(getCubeColor(Blocks[(int) x][(int) y][(int) z], faceFlags, numFaces), numFaces));
+                    VertexTextureData.put(createTexCube((float) 0, (float) 0,Blocks[(int)(x)][(int) (y)][(int) (z)], faceFlags, numFaces));
                 }
             }
         }
@@ -88,18 +102,164 @@ public class Chunk {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     
+    public boolean isTransparent(Block.BlockType type){
+        
+        return type == Block.BlockType.BlockType_Air || type == Block.BlockType.BlockType_Water;
+    }
     
+    private boolean sharedFace(int faceIndex, int x, int y, int z){
+        
+        
+        
+        switch (faceIndex) {
+            case 0: //top
+                if (y+1 >= Blocks[x].length) { return false; } // bounds checking
+                
+                if (!isTransparent(Blocks[x][y+1][z].getType())) {
+                    return true;
+                }
+                break;
+            case 1: // bottom
+                if (y-1 < 0) { return false; } // bounds checking
+                
+                if (!isTransparent(Blocks[x][y-1][z].getType())) {
+                        return true;
+                }
+                break;
+                
+            case 2: // front
+                if (z-1 < 0) { return false; } // bounds checking
+                
+                if (!isTransparent(Blocks[x][y][z-1].getType())) {
+                        return true;
+                }
+                break;
+                
+            case 3: // back
+                if (z+1 >= Blocks[x][y].length) { return false; } // bounds checking
+                
+                if (!isTransparent(Blocks[x][y][z+1].getType())) {
+                        return true;
+                }
+                break;
+                
+            case 4: // left
+                if (x-1 < 0) { return false; } // bounds checking
+                
+                if (!isTransparent(Blocks[x-1][y][z].getType())) {
+                        return true;
+                }
+                break;
+                
+            case 5: // right
+                if (x+1 >= Blocks.length) { return false; } // bounds checking
+                
+                if (!isTransparent(Blocks[x+1][y][z].getType())) {
+                        return true;
+                }
+                break;
+        }
+        
+        return false;
+    }
     
-    private float[] createCubeVertexCol(float[] CubeColorArray) {
-        float[] cubeColors = new float[3 * 4 * 6];
+    private float[] createCubeVertexCol(float[] CubeColorArray, int numFaces) {
+        float[] cubeColors = new float[3 * 4 * numFaces];
         for (int i = 0; i < cubeColors.length; i++) {
             cubeColors[i] = CubeColorArray[i % CubeColorArray.length];
         }
         return cubeColors;
     }
     
-    public static float[] createCube(float x, float y, float z) {
+    public static float[] createCube(float x, float y, float z, byte faceFlags, int numFaces) {
         int offset = CUBE_LENGTH / 2;
+        float[] faces = new float[numFaces*3*4]; // 3 coordinates and 4 points per face
+        int i = 0; // index
+        byte bitMask = 1;
+        
+        // TOP QUAD
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            faces[i] = x + offset; faces[i+1] = y + offset; faces[i+2] = z;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y + offset; faces[i+2] = z;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y + offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+            faces[i] = x + offset; faces[i+1] = y + offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+        }
+        bitMask <<= 1;
+        
+        // bottom Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            faces[i] = x + offset; faces[i+1] = y - offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y - offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y - offset; faces[i+2] = z;
+            i+=3;
+            faces[i] = x + offset; faces[i+1] = y - offset; faces[i+2] = z;
+            i+=3;
+        }
+        bitMask <<= 1;
+        
+        // Front Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            faces[i] = x + offset; faces[i+1] = y + offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y + offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y - offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+            faces[i] = x + offset; faces[i+1] = y - offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+        }
+        bitMask <<= 1;
+        
+        // Back Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            faces[i] = x + offset; faces[i+1] = y - offset; faces[i+2] = z;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y - offset; faces[i+2] = z;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y + offset; faces[i+2] = z;
+            i+=3;
+            faces[i] = x + offset; faces[i+1] = y + offset; faces[i+2] = z;
+            i+=3;
+        }
+        bitMask <<= 1;
+        
+        // Left Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            faces[i] = x - offset; faces[i+1] = y + offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y + offset; faces[i+2] = z;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y - offset; faces[i+2] = z;
+            i+=3;
+            faces[i] = x - offset; faces[i+1] = y - offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+        }
+        bitMask <<= 1;
+        
+        
+        // Right Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            faces[i] = x + offset; faces[i+1] = y + offset; faces[i+2] = z;
+            i+=3;
+            faces[i] = x + offset; faces[i+1] = y + offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+            faces[i] = x + offset; faces[i+1] = y - offset; faces[i+2] = z - CUBE_LENGTH;
+            i+=3;
+            faces[i] = x + offset; faces[i+1] = y - offset; faces[i+2] = z;
+            i+=3;
+        }
+        bitMask <<= 1;
+        
+        
+        return faces;
+        
+        /*
         return new float[] {
             // TOP QUAD
             x + offset, y + offset, z,
@@ -131,20 +291,79 @@ public class Chunk {
             x + offset, y + offset, z - CUBE_LENGTH, 
             x + offset, y - offset, z - CUBE_LENGTH,
             x + offset, y - offset, z 
-        };
+        }; 
+        */
     }
     
-    private float[] getCubeColor(Block block) {
-        
-        return new float[] { 
+    private float[] getCubeColor(Block block, byte faceFlags, int numFaces) {
+        float[] faces = new float[numFaces*12];
+        int i = 0; // index
+        byte bitMask = 1;
+        /*
+        float[] colorValues = new float[] { 
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
             0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f,
             0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f,
             0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f,
             0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f,
             0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f
-            
         };
+        */
+        
+        int iStart = i;
+        // TOP QUAD
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+12; i++){
+                faces[i] = 1f;
+            }
+        }
+        bitMask <<= 1;
+        
+        iStart = i;
+        // bottom Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+12; i++){
+                faces[i] = 0.4f;
+            }
+        }
+        bitMask <<= 1;
+
+        iStart = i;
+        // Front Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+12; i++){
+                faces[i] = 0.8f;
+            }
+        }
+        bitMask <<= 1;
+
+        iStart = i;
+        // Back Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+12; i++){
+                faces[i] = 0.8f;
+            }
+        }
+        bitMask <<= 1;
+ 
+        iStart = i;
+        // Left Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+12; i++){
+                faces[i] = 0.6f;
+            }
+        }
+        bitMask <<= 1;
+
+        iStart = i;
+        // Right Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+12; i++){
+                faces[i] = 0.6f;
+            }
+        }    
+        
+        return faces;
         /*
         switch (block.GetID()) {
             case 0: // air
@@ -274,12 +493,18 @@ public class Chunk {
         rebuildMesh(startX, startY, startZ);
     }
     
-    public static float[] createTexCube(float x, float y, Block block) {
+    public static float[] createTexCube(float x, float y, Block block, byte faceFlags, int numFaces) {
         float offset = (256f/16)/256f;
-        switch (block.GetID()) {
+        float[] faces = new float[numFaces*2*4]; // 2 coordinates and 4 points per face
+        int i = 0; // index
+        byte bitMask = 1;
+        
+        float[] blockValues;
+        int blockID = block.GetID();
+        switch (blockID) {
             
             case 1: // grass
-                return new float[] {
+                blockValues = new float[] {
                 // Top
                 x + offset*3, y + offset*10, 
                 x + offset*2, y + offset*10, 
@@ -310,9 +535,10 @@ public class Chunk {
                 x + offset*4, y + offset*0,
                 x + offset*4, y + offset*1, 
                 x + offset*3, y + offset*1};
+                break;
                 
             case 2: // sand
-                return new float[] {
+                blockValues = new float[] {
                 // top
                 x + offset*3, y + offset*2, 
                 x + offset*2, y + offset*2, 
@@ -343,9 +569,9 @@ public class Chunk {
                 x + offset*2, y + offset*2, 
                 x + offset*2, y + offset*1,
                 x + offset*3, y + offset*1};
-                
+                break;
             case 3: // water
-                return new float[] {
+                blockValues = new float[] {
                 // top
                 x + offset*14, y + offset*13, 
                 x + offset*13, y + offset*13, 
@@ -376,8 +602,9 @@ public class Chunk {
                 x + offset*13, y + offset*13, 
                 x + offset*13, y + offset*12,
                 x + offset*14, y + offset*12};
+                break;
             case 4: //dirt
-                return new float[] {
+                blockValues = new float[] {
                 // top
                 x + offset*3, y + offset*1,
                 x + offset*2, y + offset*1,
@@ -408,8 +635,9 @@ public class Chunk {
                 x + offset*3, y + offset*0,
                 x + offset*3, y + offset*1,
                 x + offset*2, y + offset*1};
+                break;
             case 5: // Stone
-                return new float[] {
+                blockValues = new float[] {
                 // BOTTOM QUAD(DOWN=+Y) Actually top quad
                 x + offset*2, y + offset*1, 
                 x + offset*1, y + offset*1, 
@@ -440,8 +668,9 @@ public class Chunk {
                 x + offset*1, y + offset*1, 
                 x + offset*1, y + offset*0,
                 x + offset*2, y + offset*0};
+                break;
             case 6: // bedrock
-                return new float[] {
+                blockValues = new float[] {
                 // BOTTOM QUAD(DOWN=+Y) Actually top quad
                 x + offset*2, y + offset*2, 
                 x + offset*1, y + offset*2, 
@@ -472,8 +701,81 @@ public class Chunk {
                 x + offset*1, y + offset*2, 
                 x + offset*1, y + offset*1,
                 x + offset*2, y + offset*1};
+                break;
+            default:
+                blockValues = new float [1]; // we die.
+                break;
         }
         
+        
+        
+        
+        int j = 0; // the index within the full block
+        int iStart = i;
+        // TOP QUAD
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+8; i++){
+                faces[i] = blockValues[j];
+                j++;
+            }
+        }
+        bitMask <<= 1;
+        j = 8;
+        
+        iStart = i;
+        // bottom Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+8; i++){
+                faces[i] = blockValues[j];
+                j++;
+            }
+        }
+        bitMask <<= 1;
+        j = 16;
+        iStart = i;
+        // Front Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+8; i++){
+                faces[i] = blockValues[j];
+                j++;
+            }
+        }
+        bitMask <<= 1;
+        j = 24;
+        iStart = i;
+        // Back Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+8; i++){
+                faces[i] = blockValues[j];
+                j++;
+            }
+        }
+        bitMask <<= 1;
+        j = 32;
+        iStart = i;
+        // Left Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+8; i++){
+                faces[i] = blockValues[j];
+                j++;
+            }
+        }
+        bitMask <<= 1;
+        j = 40;
+        iStart = i;
+        // Right Quad
+        if ((bitMask & faceFlags) > 0){ // if we should have a face here
+            for (i = iStart; i < iStart+8; i++){
+                faces[i] = blockValues[j];
+                j++;
+            }
+        }    
+        
+        
+        return faces;
+        
+        
+        /*
         // by default, we'll return the example block.
         return new float[] {
                 // BOTTOM QUAD(DOWN=+Y)
@@ -506,6 +808,7 @@ public class Chunk {
                 x + offset*4, y + offset*0,
                 x + offset*4, y + offset*1, 
                 x + offset*3, y + offset*1};
+        */
     }
     
     public boolean isBlockSurroundedBySolid(int x, int z, int y) {
